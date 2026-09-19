@@ -183,6 +183,32 @@
   .mic-button.listening { background: linear-gradient(135deg, #FF4757, #FF6B6B); animation: pulse 1s infinite; }
   @keyframes pulse { 0%, 100% { box-shadow: 0 6px 20px rgba(255,71,87,0.4); } 50% { box-shadow: 0 6px 40px rgba(255,71,87,0.8); } }
 
+  /* مؤشر مستوى الصوت */
+  .volume-meter {
+    display: none;
+    height: 10px;
+    background: #E0E7EF;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .volume-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--success), var(--accent), var(--primary));
+    border-radius: 6px;
+    transition: width 0.1s ease;
+  }
+  .volume-meter::after {
+    content: '🎤 مستوى صوتك';
+    position: absolute;
+    top: -22px;
+    right: 0;
+    font-size: 0.75rem;
+    color: #7A8B99;
+  }
+
   .feedback {
     background: white;
     border-radius: 16px;
@@ -196,12 +222,14 @@
     align-items: center;
     justify-content: center;
     transition: all 0.3s;
+    line-height: 1.4;
   }
 
   .feedback.success { background: #D3F9D8; color: #2B8A3E; }
   .feedback.warning { background: #FFF3BF; color: #B8860B; }
   .feedback.error { background: #FFE3E3; color: #C92A2A; }
   .feedback.info { background: #E3FAFC; color: #0B7285; }
+  .feedback.teaching { background: #EDE7F6; color: #5E35B1; }
 
   .transcript { font-size: 0.85rem; color: #7A8B99; text-align: center; min-height: 18px; }
 
@@ -257,6 +285,32 @@
   .modal-word { font-size: 2.2rem; font-weight: 900; margin-bottom: 8px; }
   .modal-desc { color: #7A8B99; margin-bottom: 18px; font-size: 1rem; line-height: 1.6; }
   .modal-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* شريط تقدم النطق */
+  .pronunciation-bar {
+    height: 22px;
+    background: #E0E7EF;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    position: relative;
+    display: none;
+  }
+  .pronunciation-bar.active { display: block; }
+  .pronunciation-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #FF6B6B, #FFA94D, #FFE66D, #51CF66);
+    border-radius: 12px;
+    transition: width 0.6s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-left: 8px;
+    color: white;
+    font-weight: 900;
+    font-size: 0.8rem;
+  }
 
   @media (max-width: 480px) {
     .welcome-title { font-size: 1.8rem; }
@@ -360,6 +414,10 @@
         <span>كل نطق صحيح يمنحك نقاطاً ويزرع ورقة في شجرتك!</span>
       </div>
       <div class="tip-item">
+        <span class="emoji">🎯</span>
+        <span>هدفنا النطق المثالي 100%! لبيب سيساعدك خطوة بخطوة.</span>
+      </div>
+      <div class="tip-item">
         <span class="emoji">🦊</span>
         <span>لبيب صديقك، سيساعدك في كل خطوة!</span>
       </div>
@@ -400,12 +458,20 @@
 
     <div class="action-buttons">
       <button class="btn btn-secondary" onclick="App.playWord()">🔊 استمع</button>
-      <button class="btn btn-ghost" onclick="App.skipWord()">⏭️ تخطي</button>
+      <button class="btn btn-ghost" onclick="App.teachMe()">🎓 علّمني</button>
     </div>
 
     <button class="mic-button" id="mic-button" onclick="App.toggleListening()">
       🎤 اضغط وتحدث
     </button>
+
+    <div class="volume-meter" id="volume-meter">
+      <div class="volume-fill" id="volume-fill"></div>
+    </div>
+
+    <div class="pronunciation-bar" id="pronunciation-bar">
+      <div class="pronunciation-fill" id="pronunciation-fill">0%</div>
+    </div>
 
     <div class="feedback info" id="feedback">
       اضغط على الميكروفون ثم انطق الكلمة
@@ -501,47 +567,46 @@
   </div>
 </div>
 
-<!-- ResponsiveVoice SDK مع المفتاح الخاص بك -->
 <script src="https://code.responsivevoice.org/responsivevoice.js?key=LU3IjVQp"></script>
 
 <script>
 /* ============================================================
-   لَبِيب AI — التطبيق الكامل
+   لَبِيب AI — النسخة المطوّرة مع دعم النطق الذكي
    ============================================================ */
 
 const App = (() => {
 
   const WORDS = [
-    { word: 'تفاحة',  emoji: '🍎', level: 1, desc: 'فاكهة حمراء لذيذة ومفيدة' },
-    { word: 'سيارة',  emoji: '🚗', level: 1, desc: 'مركبة تسير على أربع عجلات' },
-    { word: 'كتاب',   emoji: '📚', level: 1, desc: 'نقرأ فيه القصص والمعرفة' },
-    { word: 'قلم',    emoji: '✏️', level: 1, desc: 'نكتب به على الورق' },
-    { word: 'شمس',    emoji: '☀️', level: 1, desc: 'تشرق في النهار وتعطينا الضوء' },
-    { word: 'قمر',    emoji: '🌙', level: 1, desc: 'يظهر في الليل منيراً' },
-    { word: 'بيت',    emoji: '🏠', level: 1, desc: 'مكان نعيش فيه مع عائلتنا' },
-    { word: 'قطة',    emoji: '🐱', level: 1, desc: 'حيوان أليف صغير يموء' },
-    { word: 'كلب',    emoji: '🐶', level: 1, desc: 'صديق الإنسان الوفي' },
-    { word: 'سمكة',   emoji: '🐟', level: 1, desc: 'تعيش في الماء وتسبح' },
-    { word: 'طائر',   emoji: '🐦', level: 2, desc: 'يطير في السماء بجناحيه' },
-    { word: 'شجرة',   emoji: '🌳', level: 2, desc: 'نبات كبير يعطينا الظل' },
-    { word: 'زهرة',   emoji: '🌸', level: 2, desc: 'جميلة وملونة وتعطينا العطر' },
-    { word: 'ماء',    emoji: '💧', level: 1, desc: 'نشربه ونعيش به' },
-    { word: 'خبز',    emoji: '🍞', level: 2, desc: 'نأكله في الفطور والغداء' },
-    { word: 'حليب',   emoji: '🥛', level: 2, desc: 'شراب أبيض مفيد للعظام' },
-    { word: 'موز',    emoji: '🍌', level: 1, desc: 'فاكهة صفراء طويلة' },
-    { word: 'عنب',    emoji: '🍇', level: 2, desc: 'حبات صغيرة تجتمع في عنقود' },
-    { word: 'فراولة', emoji: '🍓', level: 3, desc: 'فاكهة حمراء صغيرة لذيذة' },
-    { word: 'برتقال', emoji: '🍊', level: 3, desc: 'فاكهة برتقالية مليئة بالفيتامين' },
-    { word: 'مدرسة',  emoji: '🏫', level: 2, desc: 'مكان نتعلم فيه مع أصدقائنا' },
-    { word: 'معلم',   emoji: '👨‍🏫', level: 3, desc: 'يعلمنا القراءة والكتابة' },
-    { word: 'طبيب',   emoji: '👨‍⚕️', level: 3, desc: 'يعالجنا عندما نمرض' },
-    { word: 'مفتاح',  emoji: '🔑', level: 2, desc: 'نفتح به الباب' },
-    { word: 'باب',    emoji: '🚪', level: 2, desc: 'ندخل منه إلى البيت' },
-    { word: 'كرسي',   emoji: '🪑', level: 2, desc: 'نجلس عليه للراحة' },
-    { word: 'طاولة',  emoji: '🪑', level: 3, desc: 'نضع عليها الطعام والكتب' },
-    { word: 'نافذة',  emoji: '🪟', level: 3, desc: 'ندخل منها الضوء والهواء' },
-    { word: 'ساعة',   emoji: '⌚', level: 2, desc: 'تخبرنا بالوقت' },
-    { word: 'هاتف',   emoji: '📱', level: 2, desc: 'نتصل به بأحبابنا' }
+    { word: 'تفاحة',  emoji: '🍎', level: 1, desc: 'فاكهة حمراء لذيذة ومفيدة', syllables: ['تُف','فا','حة'] },
+    { word: 'سيارة',  emoji: '🚗', level: 1, desc: 'مركبة تسير على أربع عجلات', syllables: ['سَيْ','يا','رة'] },
+    { word: 'كتاب',   emoji: '📚', level: 1, desc: 'نقرأ فيه القصص والمعرفة', syllables: ['كِ','تاب'] },
+    { word: 'قلم',    emoji: '✏️', level: 1, desc: 'نكتب به على الورق', syllables: ['قَ','لَم'] },
+    { word: 'شمس',    emoji: '☀️', level: 1, desc: 'تشرق في النهار وتعطينا الضوء', syllables: ['شَمْس'] },
+    { word: 'قمر',    emoji: '🌙', level: 1, desc: 'يظهر في الليل منيراً', syllables: ['قَ','مَر'] },
+    { word: 'بيت',    emoji: '🏠', level: 1, desc: 'مكان نعيش فيه مع عائلتنا', syllables: ['بَيْت'] },
+    { word: 'قطة',    emoji: '🐱', level: 1, desc: 'حيوان أليف صغير يموء', syllables: ['قِطْ','طة'] },
+    { word: 'كلب',    emoji: '🐶', level: 1, desc: 'صديق الإنسان الوفي', syllables: ['كَلْب'] },
+    { word: 'سمكة',   emoji: '🐟', level: 1, desc: 'تعيش في الماء وتسبح', syllables: ['سَ','مَ','كة'] },
+    { word: 'طائر',   emoji: '🐦', level: 2, desc: 'يطير في السماء بجناحيه', syllables: ['طا','ئر'] },
+    { word: 'شجرة',   emoji: '🌳', level: 2, desc: 'نبات كبير يعطينا الظل', syllables: ['شَ','جَ','رة'] },
+    { word: 'زهرة',   emoji: '🌸', level: 2, desc: 'جميلة وملونة وتعطينا العطر', syllables: ['زَهْ','رة'] },
+    { word: 'ماء',    emoji: '💧', level: 1, desc: 'نشربه ونعيش به', syllables: ['ماء'] },
+    { word: 'خبز',    emoji: '🍞', level: 2, desc: 'نأكله في الفطور والغداء', syllables: ['خُبْز'] },
+    { word: 'حليب',   emoji: '🥛', level: 2, desc: 'شراب أبيض مفيد للعظام', syllables: ['حَ','ليب'] },
+    { word: 'موز',    emoji: '🍌', level: 1, desc: 'فاكهة صفراء طويلة', syllables: ['مَوْز'] },
+    { word: 'عنب',    emoji: '🍇', level: 2, desc: 'حبات صغيرة تجتمع في عنقود', syllables: ['عِ','نَب'] },
+    { word: 'فراولة', emoji: '🍓', level: 3, desc: 'فاكهة حمراء صغيرة لذيذة', syllables: ['فَرا','وْ','لة'] },
+    { word: 'برتقال', emoji: '🍊', level: 3, desc: 'فاكهة برتقالية مليئة بالفيتامين', syllables: ['بُرْ','تُ','قال'] },
+    { word: 'مدرسة',  emoji: '🏫', level: 2, desc: 'مكان نتعلم فيه مع أصدقائنا', syllables: ['مَدْ','رَ','سة'] },
+    { word: 'معلم',   emoji: '👨‍🏫', level: 3, desc: 'يعلمنا القراءة والكتابة', syllables: ['مُ','عَلْ','لِم'] },
+    { word: 'طبيب',   emoji: '👨‍⚕️', level: 3, desc: 'يعالجنا عندما نمرض', syllables: ['طَ','بيب'] },
+    { word: 'مفتاح',  emoji: '🔑', level: 2, desc: 'نفتح به الباب', syllables: ['مِفْ','تاح'] },
+    { word: 'باب',    emoji: '🚪', level: 2, desc: 'ندخل منه إلى البيت', syllables: ['باب'] },
+    { word: 'كرسي',   emoji: '🪑', level: 2, desc: 'نجلس عليه للراحة', syllables: ['كُرْ','سي'] },
+    { word: 'طاولة',  emoji: '🪑', level: 3, desc: 'نضع عليها الطعام والكتب', syllables: ['طا','وِ','لة'] },
+    { word: 'نافذة',  emoji: '🪟', level: 3, desc: 'ندخل منها الضوء والهواء', syllables: ['نا','فِ','ذة'] },
+    { word: 'ساعة',   emoji: '⌚', level: 2, desc: 'تخبرنا بالوقت', syllables: ['سا','عة'] },
+    { word: 'هاتف',   emoji: '📱', level: 2, desc: 'نتصل به بأحبابنا', syllables: ['ها','تِف'] }
   ];
 
   let state = {
@@ -559,12 +624,23 @@ const App = (() => {
     currentWord: null,
     learnTab: 'all',
     modalWord: null,
-    rvReady: false
+    rvReady: false,
+    attemptsOnCurrentWord: 0,
+    isTeachingMode: false,
+    lastTranscripts: [],
+    audioLevel: 0,
+    audioContext: null,
+    analyser: null,
+    micStream: null,
+    recognitionActive: false
   };
 
+  /* ============================================================
+     تحميل وحفظ التقدم
+     ============================================================ */
   function loadProgress() {
     try {
-      const saved = localStorage.getItem('labeeb_progress_v4');
+      const saved = localStorage.getItem('labeeb_progress_v5');
       if (saved) {
         const data = JSON.parse(saved);
         state.progress = data.progress || {};
@@ -580,7 +656,7 @@ const App = (() => {
           word: w.word, emoji: w.emoji, level: w.level, desc: w.desc,
           attempts: 0, correct: 0, consecutiveCorrect: 0,
           pronunciationScore: 0, easeFactor: 2.5, intervalDays: 0,
-          lastSeen: null, errorCount: 0
+          lastSeen: null, errorCount: 0, perfectCount: 0
         };
       }
       state.progress[w.word].desc = w.desc;
@@ -589,7 +665,7 @@ const App = (() => {
 
   function saveProgress() {
     try {
-      localStorage.setItem('labeeb_progress_v4', JSON.stringify({
+      localStorage.setItem('labeeb_progress_v5', JSON.stringify({
         progress: state.progress,
         points: state.points,
         bestStreak: state.bestStreak,
@@ -599,18 +675,13 @@ const App = (() => {
   }
 
   /* ============================================================
-     ResponsiveVoice — الصوت الواقعي
+     نظام الصوت الواقعي
      ============================================================ */
   function isRVReady() {
     return typeof responsiveVoice !== 'undefined' && responsiveVoice.voiceSupport();
   }
 
-  /**
-   * نطق النص باستخدام ResponsiveVoice
-   * - girl: Arabic Female
-   * - boy: Arabic Male
-   */
-  function speakWithRV(text, gender = 'girl') {
+  function speakWithRV(text, gender = 'girl', opts = {}) {
     if (typeof responsiveVoice === 'undefined') {
       toast('⚠️ جاري تحميل الصوت... حاول بعد لحظة');
       return;
@@ -619,33 +690,27 @@ const App = (() => {
       toast('⚠️ المتصفح لا يدعم الصوت');
       return;
     }
-
-    // إيقاف أي نطق سابق
     try { responsiveVoice.cancel(); } catch (e) {}
-
-    // اختيار الصوت
     const voiceName = gender === 'girl' ? 'Arabic Female' : 'Arabic Male';
-
     const params = {
-      pitch: gender === 'girl' ? 1.2 : 0.85,
-      rate: 0.85,
+      pitch: opts.pitch !== undefined ? opts.pitch : (gender === 'girl' ? 1.15 : 0.85),
+      rate: opts.rate !== undefined ? opts.rate : 0.85,
       volume: 1,
       onstart: () => { state.rvReady = true; },
       onerror: (e) => {
         console.warn('RV error:', e);
-        // محاولة بديلة بدون params
-        try { responsiveVoice.speak(text, voiceName); }
-        catch (e2) { toast('⚠️ تعذر تشغيل الصوت'); }
+        try { responsiveVoice.speak(text, voiceName); } catch (e2) {}
       }
     };
-
     try {
       responsiveVoice.speak(text, voiceName, params);
     } catch (e) {
-      console.warn('فشل النطق:', e);
-      try { responsiveVoice.speak(text, voiceName); }
-      catch (e2) { toast('⚠️ تعذر تشغيل الصوت'); }
+      try { responsiveVoice.speak(text, voiceName); } catch (e2) {}
     }
+  }
+
+  function speakSlow(text, gender) {
+    speakWithRV(text, gender, { rate: 0.55, pitch: gender === 'girl' ? 1.25 : 0.9 });
   }
 
   /* ============================================================
@@ -696,15 +761,11 @@ const App = (() => {
   function renderLearnCards() {
     const grid = document.getElementById('learn-grid');
     let words = WORDS.slice();
-
-    if (state.learnTab === 'new') {
-      words = words.filter(w => state.progress[w.word].attempts === 0);
-    } else if (state.learnTab === 'hard') {
-      words = words.filter(w => {
-        const p = state.progress[w.word];
-        return p.attempts > 0 && p.pronunciationScore < 60;
-      });
-    }
+    if (state.learnTab === 'new') words = words.filter(w => state.progress[w.word].attempts === 0);
+    else if (state.learnTab === 'hard') words = words.filter(w => {
+      const p = state.progress[w.word];
+      return p.attempts > 0 && p.pronunciationScore < 60;
+    });
 
     if (words.length === 0) {
       grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#7A8B99;padding:30px">
@@ -721,9 +782,7 @@ const App = (() => {
         <div class="learn-card" onclick="App.showWordModal('${w.word}')">
           <span class="card-emoji">${w.emoji}</span>
           <div class="card-word">${w.word}</div>
-          <div class="card-hint">
-            ${p.attempts === 0 ? '✨ جديدة' : `دقة ${mastery}%`}
-          </div>
+          <div class="card-hint">${p.attempts === 0 ? '✨ جديدة' : `دقة ${mastery}%`}</div>
           <div class="card-mastery">
             <div class="card-mastery-fill" style="width:${mastery}%"></div>
           </div>
@@ -746,6 +805,19 @@ const App = (() => {
   function playModalWord() {
     if (!state.modalWord) return;
     speakWithRV(state.modalWord.word, state.voiceGender);
+    if (state.modalWord.syllables && state.modalWord.syllables.length > 1) {
+      setTimeout(() => teachSyllablesInModal(state.modalWord), 2200);
+    }
+  }
+
+  function teachSyllablesInModal(word) {
+    if (!word.syllables || word.syllables.length === 0) return;
+    let delay = 0;
+    word.syllables.forEach((syl) => {
+      setTimeout(() => speakSlow(syl, state.voiceGender), delay);
+      delay += 1300;
+    });
+    setTimeout(() => speakSlow(word.word, state.voiceGender), delay + 300);
   }
 
   function closeModal(event) {
@@ -755,7 +827,26 @@ const App = (() => {
   }
 
   /* ============================================================
-     محرك التعلم التكيفي
+     🎓 نظام تعليم النطق الصحيح
+     ============================================================ */
+  function teachSyllables(word) {
+    if (!word.syllables || word.syllables.length === 0) return;
+    let delay = 0;
+    word.syllables.forEach((syl) => {
+      setTimeout(() => {
+        setFeedback(`🎓 اسمع: "${syl}"`, 'teaching');
+        speakSlow(syl, state.voiceGender);
+      }, delay);
+      delay += 1300;
+    });
+    setTimeout(() => {
+      setFeedback(`🔊 الآن الكلمة كاملة: "${word.word}"`, 'teaching');
+      speakSlow(word.word, state.voiceGender);
+    }, delay + 300);
+  }
+
+  /* ============================================================
+     🧠 محرك التعلم التكيفي
      ============================================================ */
   function calculateWeight(word) {
     const p = state.progress[word.word];
@@ -767,7 +858,6 @@ const App = (() => {
       if (daysSince > p.intervalDays) urgency = 2.5;
       else if (daysSince > p.intervalDays * 0.7) urgency = 1.5;
     } else urgency = 1.3;
-
     let pronFactor = 1.0;
     if (p.attempts > 0) {
       const score = p.pronunciationScore;
@@ -776,7 +866,6 @@ const App = (() => {
       else if (score >= 90) pronFactor = 0.5;
       else pronFactor = 0.8;
     } else pronFactor = 1.2;
-
     return baseWeight * urgency * pronFactor;
   }
 
@@ -802,13 +891,13 @@ const App = (() => {
   }
 
   /* ============================================================
-     تقييم النطق
+     🎯 تحليل النطق المتقدم - حرف بحرف
      ============================================================ */
   function normalizeArabic(text) {
     if (!text) return '';
     return text
-      .replace(/[\u064B-\u0652]/g, '')
-      .replace(/[إأآا]/g, 'ا')
+      .replace(/[\u064B-\u0652\u0640]/g, '')
+      .replace(/[إأآٱا]/g, 'ا')
       .replace(/ى/g, 'ي')
       .replace(/ؤ/g, 'و')
       .replace(/ئ/g, 'ي')
@@ -837,26 +926,73 @@ const App = (() => {
     return matrix[b.length][a.length];
   }
 
+  /**
+   * 🎯 تقييم النطق بدقة عالية
+   */
   function evaluatePronunciation(target, spoken) {
     const t = normalizeArabic(target);
     const s = normalizeArabic(spoken);
-    if (!s) return 0;
-    if (s === t) return 100;
-    if (s.includes(t)) return 95;
-    const spokenWords = s.split(' ').filter(Boolean);
-    let bestScore = 0;
+    if (!s) return { score: 0, missing: t.split(''), extra: [], wrong: [], detail: 'لم أسمع شيئاً' };
+    if (s === t) return { score: 100, missing: [], extra: [], wrong: [], detail: 'نطق مثالي!' };
+
+    if (s.includes(t) && t.length >= 3) {
+      return { score: 98, missing: [], extra: [], wrong: [], detail: 'نطق شبه مثالي' };
+    }
+
     const maxLen = Math.max(t.length, s.length);
     const dist = levenshtein(t, s);
-    bestScore = Math.max(bestScore, Math.round((1 - dist / maxLen) * 100));
+    let baseScore = Math.round((1 - dist / maxLen) * 100);
+
+    const spokenWords = s.split(' ').filter(Boolean);
+    let bestWordScore = 0;
     spokenWords.forEach(w => {
       const maxL = Math.max(t.length, w.length);
       const d = levenshtein(t, w);
-      const score = Math.round((1 - d / maxL) * 100);
-      bestScore = Math.max(bestScore, score);
+      const sc = Math.round((1 - d / maxL) * 100);
+      if (sc > bestWordScore) bestWordScore = sc;
     });
-    return Math.max(0, Math.min(100, bestScore));
+
+    const finalScore = Math.max(baseScore, bestWordScore);
+    const analysis = analyzeCharacterErrors(t, s);
+
+    return {
+      score: Math.max(0, Math.min(100, finalScore)),
+      missing: analysis.missing,
+      extra: analysis.extra,
+      wrong: analysis.wrong,
+      detail: analysis.detail
+    };
   }
 
+  function analyzeCharacterErrors(target, spoken) {
+    const tChars = target.replace(/\s/g, '').split('');
+    const sChars = spoken.replace(/\s/g, '').split('');
+    const sSet = new Set(sChars);
+    const tSet = new Set(tChars);
+
+    const missing = tChars.filter(c => !sSet.has(c));
+    const extra = sChars.filter(c => !tSet.has(c));
+
+    const wrong = [];
+    const minLen = Math.min(tChars.length, sChars.length);
+    for (let i = 0; i < minLen; i++) {
+      if (tChars[i] !== sChars[i]) {
+        wrong.push({ expected: tChars[i], got: sChars[i], position: i });
+      }
+    }
+
+    let detail = '';
+    if (missing.length > 0 && extra.length > 0) detail = `فقدت بعض الحروف وأضفت أخرى`;
+    else if (missing.length > 0) detail = `نسيت الحرف: ${missing.join('، ')}`;
+    else if (extra.length > 0) detail = `أضفت حروفاً غير موجودة`;
+    else if (wrong.length > 0) detail = `استبدلت: "${wrong[0].expected}" بـ "${wrong[0].got}"`;
+
+    return { missing, extra, wrong, detail };
+  }
+
+  /* ============================================================
+     📊 تحديث التقدم
+     ============================================================ */
   function updateProgress(word, pronunciationScore) {
     const p = state.progress[word];
     p.attempts += 1;
@@ -865,12 +1001,13 @@ const App = (() => {
     p.pronunciationScore = p.attempts === 1
       ? pronunciationScore
       : Math.round(p.pronunciationScore * (1 - alpha) + pronunciationScore * alpha);
-    const isCorrect = pronunciationScore >= 75;
+    const isCorrect = pronunciationScore >= 85;
+    if (pronunciationScore === 100) p.perfectCount = (p.perfectCount || 0) + 1;
+
     if (isCorrect) {
       p.correct += 1;
       p.consecutiveCorrect += 1;
-      let quality = 5;
-      if (pronunciationScore < 85) quality = 4;
+      let quality = pronunciationScore === 100 ? 5 : (pronunciationScore >= 90 ? 4 : 3);
       p.easeFactor = Math.max(1.3,
         p.easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
       );
@@ -891,7 +1028,57 @@ const App = (() => {
   }
 
   /* ============================================================
-     التعرف على الكلام
+     🎤 مستشعر الصوت - موجات بصرية + مستوى
+     ============================================================ */
+  async function startAudioVisualizer() {
+    try {
+      if (state.micStream) return;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      state.micStream = stream;
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      state.audioContext = ctx;
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      state.analyser = analyser;
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const meterEl = document.getElementById('volume-meter');
+      const fillEl = document.getElementById('volume-fill');
+
+      const draw = () => {
+        if (!state.isListening) return;
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+        const avg = sum / dataArray.length;
+        state.audioLevel = avg;
+        if (meterEl) meterEl.style.display = 'block';
+        if (fillEl) fillEl.style.width = Math.min(100, avg * 1.8) + '%';
+        requestAnimationFrame(draw);
+      };
+      draw();
+    } catch (e) {
+      console.warn('لا يمكن الوصول للميكروفون للتصور:', e);
+    }
+  }
+
+  function stopAudioVisualizer() {
+    if (state.audioContext) {
+      try { state.audioContext.close(); } catch (e) {}
+      state.audioContext = null;
+    }
+    if (state.micStream) {
+      state.micStream.getTracks().forEach(t => t.stop());
+      state.micStream = null;
+    }
+    const meterEl = document.getElementById('volume-meter');
+    if (meterEl) meterEl.style.display = 'none';
+  }
+
+  /* ============================================================
+     🎙️ التعرف على الكلام
      ============================================================ */
   function initSpeechRecognition() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -902,28 +1089,46 @@ const App = (() => {
     const rec = new SR();
     rec.lang = 'ar-SA';
     rec.continuous = false;
-    rec.interimResults = false;
-    rec.maxAlternatives = 3;
+    rec.interimResults = true;
+    rec.maxAlternatives = 5;
 
     rec.onresult = (event) => {
-      const results = [];
+      const finalResults = [];
+      let interimText = '';
       for (let i = 0; i < event.results.length; i++) {
         for (let j = 0; j < event.results[i].length; j++) {
-          results.push(event.results[i][j].transcript);
+          const transcript = event.results[i][j].transcript;
+          if (event.results[i].isFinal) finalResults.push(transcript);
+          else interimText += transcript;
         }
       }
-      handleSpeechResult(results);
+      if (interimText) {
+        document.getElementById('transcript').textContent = `أسمعك تقول: "${interimText}"`;
+      }
+      if (finalResults.length > 0) handleSpeechResult(finalResults);
     };
 
     rec.onerror = (event) => {
       console.warn('خطأ في التعرف:', event.error);
-      if (event.error === 'no-speech') setFeedback('لم أسمع صوتاً. حاول مرة أخرى 🎤', 'warning');
-      else if (event.error === 'not-allowed') setFeedback('يجب السماح بالوصول للميكروفون', 'error');
-      else setFeedback('حدث خطأ، حاول مرة أخرى', 'error');
+      if (event.error === 'no-speech') {
+        setFeedback('🔇 لم أسمع صوتاً. اقترب من الميكروفون وحاول مرة أخرى', 'warning');
+      } else if (event.error === 'not-allowed') {
+        setFeedback('🚫 يجب السماح بالوصول للميكروفون', 'error');
+      } else if (event.error === 'audio-capture') {
+        setFeedback('🎤 لا يوجد ميكروفون متصل', 'error');
+      } else if (event.error === 'aborted') {
+        // تجاهل
+      } else {
+        setFeedback('⚠️ حدث خطأ، حاول مرة أخرى', 'error');
+      }
       stopListening();
     };
 
-    rec.onend = () => stopListening();
+    rec.onend = () => {
+      state.recognitionActive = false;
+      stopListening();
+    };
+
     return rec;
   }
 
@@ -936,16 +1141,24 @@ const App = (() => {
     startListening();
   }
 
-  function startListening() {
+  async function startListening() {
+    if (state.recognitionActive) return;
     try {
       state.recognition.start();
+      state.recognitionActive = true;
       state.isListening = true;
       const btn = document.getElementById('mic-button');
       btn.classList.add('listening');
-      btn.innerHTML = '🎙️ أستمع إليك...';
-      setFeedback('تحدث الآن بوضوح 🎤', 'info');
+      btn.innerHTML = '🎙️ أستمع إليك... انطق الآن';
+      setFeedback('🎤 انطق الكلمة بوضوح الآن', 'info');
       document.getElementById('transcript').textContent = '';
-    } catch (e) { console.warn('فشل بدء الاستماع:', e); }
+      hidePronunciationBar();
+      await startAudioVisualizer();
+    } catch (e) {
+      console.warn('فشل بدء الاستماع:', e);
+      state.recognitionActive = false;
+      state.isListening = false;
+    }
   }
 
   function stopListening() {
@@ -955,63 +1168,152 @@ const App = (() => {
       btn.classList.remove('listening');
       btn.innerHTML = '🎤 اضغط وتحدث';
     }
+    stopAudioVisualizer();
   }
 
+  /* ============================================================
+     شريط تقدم النطق
+     ============================================================ */
+  function showPronunciationBar(score) {
+    const bar = document.getElementById('pronunciation-bar');
+    const fill = document.getElementById('pronunciation-fill');
+    bar.classList.add('active');
+    fill.style.width = '0%';
+    fill.textContent = '0%';
+    setTimeout(() => {
+      fill.style.width = score + '%';
+      fill.textContent = score + '%';
+    }, 100);
+  }
+
+  function hidePronunciationBar() {
+    const bar = document.getElementById('pronunciation-bar');
+    bar.classList.remove('active');
+  }
+
+  /* ============================================================
+     🎓 معالجة نتيجة النطق - النظام الذكي
+     ============================================================ */
   function handleSpeechResult(transcripts) {
     const word = state.currentWord;
     if (!word) return;
 
-    let bestScore = 0;
-    let bestTranscript = '';
+    try { state.recognition.stop(); } catch (e) {}
+    state.recognitionActive = false;
+    stopListening();
+
+    let bestResult = { score: 0, transcript: '', missing: [], extra: [], wrong: [], detail: '' };
     transcripts.forEach(t => {
-      const score = evaluatePronunciation(word.word, t);
-      if (score > bestScore) { bestScore = score; bestTranscript = t; }
+      const r = evaluatePronunciation(word.word, t);
+      if (r.score > bestResult.score) {
+        bestResult = { ...r, transcript: t };
+      }
     });
 
-    document.getElementById('transcript').textContent = `سمعت: "${bestTranscript}"`;
+    state.lastTranscripts = transcripts;
+    state.attemptsOnCurrentWord += 1;
 
-    const isCorrect = bestScore >= 75;
-    const isClose = bestScore >= 50 && bestScore < 75;
+    document.getElementById('transcript').textContent = `سمعت: "${bestResult.transcript}"`;
+    showPronunciationBar(bestResult.score);
 
-    updateProgress(word.word, bestScore);
+    const score = bestResult.score;
+    const isPerfect = score === 100;
+    const isCorrect = score >= 85;
+    const isClose = score >= 60 && score < 85;
+    const isWeak = score < 60;
+
+    updateProgress(word.word, score);
 
     state.session.results.push({
       word: word.word, emoji: word.emoji,
-      transcript: bestTranscript, score: bestScore, correct: isCorrect
+      transcript: bestResult.transcript, score, correct: isCorrect
     });
     state.session.sessionAttempts += 1;
 
     let points = 0;
-    if (bestScore >= 90) { points = 10; state.currentStreak += 1; }
-    else if (isCorrect) { points = 7; state.currentStreak += 1; }
-    else if (isClose) { points = 3; state.currentStreak = 0; }
+    if (isPerfect) { points = 15; state.currentStreak += 1; }
+    else if (isCorrect) { points = 10; state.currentStreak += 1; }
+    else if (isClose) { points = 4; state.currentStreak = 0; }
     else { points = 0; state.currentStreak = 0; }
 
     if (state.currentStreak > state.bestStreak) state.bestStreak = state.currentStreak;
-
     state.points += points;
     state.session.sessionPoints += points;
     if (isCorrect) state.session.sessionCorrect += 1;
 
-    if (bestScore >= 90) {
-      setFeedback(`🌟 ممتاز! نطق مثالي لـ "${word.word}"! +${points}`, 'success');
+    if (isPerfect) {
+      setFeedback(`🌟 مذهل! نطق مثالي 100% لـ "${word.word}"! +${points}`, 'success');
       animateMascot('🎉');
+      speakWithRV('ممتاز! نطقك مثالي', state.voiceGender, { rate: 1.0 });
+      state.attemptsOnCurrentWord = 0;
+      setTimeout(() => nextQuestion(), 2200);
     } else if (isCorrect) {
-      setFeedback(`✅ أحسنت! "${word.word}" نطق صحيح! +${points}`, 'success');
+      setFeedback(`✅ أحسنت! نطق صحيح (${score}%). +${points}`, 'success');
       animateMascot('🦊');
+      if (state.attemptsOnCurrentWord < 2) {
+        setTimeout(() => {
+          setFeedback(`🎯 قريب جداً من المثالي! اضغط الميكروفون وأعد المحاولة للوصول إلى 100%`, 'info');
+          speakWithRV('حاول مرة أخرى لتصل إلى الكمال', state.voiceGender);
+          state.attemptsOnCurrentWord = 2;
+          // تفعيل زر الميكروفون من جديد
+          document.getElementById('mic-button').disabled = false;
+        }, 1800);
+      } else {
+        state.attemptsOnCurrentWord = 0;
+        setTimeout(() => nextQuestion(), 2200);
+      }
     } else if (isClose) {
-      setFeedback(`🔄 قريب جداً! حاول مرة أخرى +${points}`, 'warning');
+      setFeedback(`🔄 قريب! ${bestResult.detail || ''} — استمع جيداً وأعد المحاولة`, 'warning');
       animateMascot('💪');
+      teachCorrectPronunciation(word, bestResult);
     } else {
-      setFeedback(`❌ حاول مرة أخرى، استمع للكلمة أولاً`, 'error');
-      animateMascot('🤔');
+      setFeedback(`📚 لنسمعها معاً خطوة بخطوة`, 'error');
+      animateMascot('🎓');
+      teachCorrectPronunciation(word, bestResult);
     }
 
     updateGameUI();
     saveProgress();
+  }
 
-    const delay = isCorrect ? 1800 : 2500;
-    setTimeout(() => nextQuestion(), delay);
+  /**
+   * 🎓 تعليم النطق الصحيح خطوة بخطوة
+   */
+  function teachCorrectPronunciation(word, result) {
+    state.isTeachingMode = true;
+
+    setTimeout(() => {
+      setFeedback(`🎓 اسمع الكلمة ببطء: "${word.word}"`, 'teaching');
+      speakSlow(word.word, state.voiceGender);
+    }, 600);
+
+    if (word.syllables && word.syllables.length > 1) {
+      let delay = 2600;
+      word.syllables.forEach((syl) => {
+        setTimeout(() => {
+          setFeedback(`🗣️ قل: "${syl}"`, 'teaching');
+          speakSlow(syl, state.voiceGender);
+        }, delay);
+        delay += 1400;
+      });
+
+      setTimeout(() => {
+        setFeedback(`🔊 الآن الكلمة كاملة: "${word.word}"`, 'teaching');
+        speakSlow(word.word, state.voiceGender);
+      }, delay + 500);
+
+      setTimeout(() => {
+        setFeedback(`🎤 الآن دورك! اضغط الميكروفون وانطق "${word.word}" بوضوح`, 'info');
+        state.isTeachingMode = false;
+        state.attemptsOnCurrentWord = 0;
+      }, delay + 3400);
+    } else {
+      setTimeout(() => {
+        setFeedback(`🎤 الآن دورك! اضغط الميكروفون وانطق "${word.word}" بوضوح`, 'info');
+        state.isTeachingMode = false;
+        state.attemptsOnCurrentWord = 0;
+      }, 3400);
+    }
   }
 
   /* ============================================================
@@ -1023,6 +1325,8 @@ const App = (() => {
       sessionPoints: 0, sessionCorrect: 0, sessionAttempts: 0
     };
     state.currentStreak = 0;
+    state.attemptsOnCurrentWord = 0;
+    state.isTeachingMode = false;
     showScreen('screen-game');
     document.getElementById('game-total').textContent = state.session.queue.length;
     loadQuestion();
@@ -1035,15 +1339,17 @@ const App = (() => {
     }
     const word = state.session.queue[state.session.index];
     state.currentWord = word;
+    state.attemptsOnCurrentWord = 0;
 
     document.getElementById('word-emoji').textContent = word.emoji;
     document.getElementById('word-text').textContent = word.word;
     document.getElementById('word-hint').textContent = 'استمع ثم انطق الكلمة';
     document.getElementById('game-question').textContent = state.session.index + 1;
-    setFeedback('اضغط على الميكروفون ثم انطق الكلمة', 'info');
+    setFeedback('🎤 اضغط على الميكروفون ثم انطق الكلمة بوضوح', 'info');
     document.getElementById('transcript').textContent = '';
+    hidePronunciationBar();
 
-    setTimeout(() => playWord(), 500);
+    setTimeout(() => playWord(), 600);
     updateGameUI();
   }
 
@@ -1066,6 +1372,24 @@ const App = (() => {
   function playWord() {
     if (!state.currentWord) return;
     speakWithRV(state.currentWord.word, state.voiceGender);
+  }
+
+  function teachMe() {
+    if (!state.currentWord) return;
+    state.isTeachingMode = true;
+    setFeedback(`🎓 لبيب سيعلمك النطق الصحيح لـ "${state.currentWord.word}"`, 'teaching');
+    setTimeout(() => {
+      speakSlow(state.currentWord.word, state.voiceGender);
+    }, 800);
+    setTimeout(() => {
+      if (state.currentWord.syllables && state.currentWord.syllables.length > 1) {
+        teachSyllables(state.currentWord);
+      }
+    }, 2600);
+    setTimeout(() => {
+      setFeedback(`🎤 الآن دورك! اضغط الميكروفون وانطق "${state.currentWord.word}"`, 'info');
+      state.isTeachingMode = false;
+    }, 2600 + (state.currentWord.syllables ? state.currentWord.syllables.length * 1300 + 2400 : 800));
   }
 
   /* ============================================================
@@ -1187,7 +1511,7 @@ const App = (() => {
 
   function resetProgress() {
     if (confirm('هل أنت متأكد من إعادة البدء من جديد؟ سيتم حذف كل التقدم.')) {
-      localStorage.removeItem('labeeb_progress_v4');
+      localStorage.removeItem('labeeb_progress_v5');
       state.progress = {};
       state.points = 0;
       state.bestStreak = 0;
@@ -1202,7 +1526,6 @@ const App = (() => {
     updateWelcomeStats();
     updateVoiceUI();
 
-    // التحقق من جاهزية ResponsiveVoice
     let checkCount = 0;
     const checkRV = setInterval(() => {
       checkCount++;
@@ -1222,7 +1545,7 @@ const App = (() => {
   }
 
   return {
-    init, startSession, playWord, skipWord, toggleListening,
+    init, startSession, playWord, skipWord, toggleListening, teachMe,
     showScreen, renderTeacher, updateWelcomeStats, resetProgress,
     selectVoice, testVoice, openLearn, renderLearnCards,
     switchLearnTab, showWordModal, playModalWord, closeModal
