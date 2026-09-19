@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لبيب AI — تعلّم العربية باللعب</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #FF6B6B;
+    --secondary: #4ECDC4;
+    --accent: #FFE66D;
+    --purple: #9B59B6;
+    --dark: #2C3E50;
+    --light: #F7F9FC;
+    --success: #51CF66;
+    --warning: #FFA94D;
+    --danger: #FF6B6B;
+    --shadow: 0 10px 30px rgba(0,0,0,0.1);
+    --radius: 24px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    color: var(--dark);
+    overflow-x: hidden;
+  }
+
+  .app-container {
+    width: 100%;
+    max-width: 760px;
+    background: var(--light);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+    min-height: 660px;
+  }
+
+  .screen { display: none; padding: 28px 22px; animation: fadeIn 0.4s ease; }
+  .screen.active { display: block; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .welcome-title {
+    text-align: center;
+    font-size: 2.4rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+
+  .welcome-subtitle { text-align: center; color: #7A8B99; font-size: 1.05rem; margin-bottom: 18px; }
+  .labeeb-hero { font-size: 5rem; text-align: center; margin: 8px 0 16px; animation: bounce 2s infinite; }
+
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 16px;
+    font-family: inherit;
+    font-size: 1.15rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .btn-primary { background: linear-gradient(135deg, var(--primary), #FF8E8E); color: white; box-shadow: 0 6px 20px rgba(255,107,107,0.4); }
+  .btn-primary:hover { transform: translateY(-2px); }
+  .btn-secondary { background: linear-gradient(135deg, var(--secondary), #6FE0D8); color: white; box-shadow: 0 6px 20px rgba(78,205,196,0.4); }
+  .btn-secondary:hover { transform: translateY(-2px); }
+  .btn-purple { background: linear-gradient(135deg, var(--purple), #B07CC6); color: white; box-shadow: 0 6px 20px rgba(155,89,182,0.4); }
+  .btn-purple:hover { transform: translateY(-2px); }
+  .btn-ghost { background: transparent; color: #7A8B99; border: 2px solid #E0E7EF; font-size: 1rem; padding: 12px; }
+  .btn-ghost:hover { background: #F0F4F8; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+  .stat-card { background: white; border-radius: 16px; padding: 14px 6px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  .stat-value { font-size: 1.6rem; font-weight: 900; color: var(--primary); }
+  .stat-label { font-size: 0.8rem; color: #7A8B99; margin-top: 2px; }
+
+  .voice-selector { background: white; border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  .voice-selector-title { font-size: 1rem; font-weight: 700; color: var(--dark); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .voice-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .voice-option {
+    background: #F7F9FC;
+    border: 3px solid transparent;
+    border-radius: 14px;
+    padding: 14px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .voice-option:hover { background: #EEF2F7; }
+  .voice-option.selected { border-color: var(--primary); background: #FFF0F0; box-shadow: 0 4px 12px rgba(255,107,107,0.2); }
+  .voice-option .avatar { font-size: 2.4rem; display: block; margin-bottom: 4px; }
+  .voice-option .name { font-size: 1rem; font-weight: 700; color: var(--dark); }
+  .voice-option .desc { font-size: 0.75rem; color: #7A8B99; margin-top: 2px; }
+
+  .voice-test-btn { margin-top: 10px; background: var(--accent); border: none; border-radius: 10px; padding: 8px 16px; font-family: inherit; font-weight: 700; cursor: pointer; width: 100%; color: var(--dark); }
+  .voice-test-btn:hover { background: #F0D94A; }
+
+  .learn-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .learn-title { font-size: 1.6rem; font-weight: 900; color: var(--dark); }
+
+  .tips-box { background: linear-gradient(135deg, #FFF9DB, #FFE8A3); border-radius: 18px; padding: 18px; margin-bottom: 20px; border-right: 6px solid var(--accent); }
+  .tips-box h3 { font-size: 1.15rem; margin-bottom: 10px; color: #B8860B; display: flex; align-items: center; gap: 8px; }
+  .tip-item { background: rgba(255,255,255,0.7); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px; font-size: 0.95rem; line-height: 1.5; display: flex; align-items: flex-start; gap: 10px; }
+  .tip-item:last-child { margin-bottom: 0; }
+  .tip-item .emoji { font-size: 1.4rem; flex-shrink: 0; }
+
+  .learn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; max-height: 380px; overflow-y: auto; padding: 4px; }
+
+  .learn-card { background: white; border-radius: 16px; padding: 14px 8px; text-align: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 3px solid transparent; }
+  .learn-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-color: var(--secondary); }
+  .learn-card:active { transform: scale(0.96); }
+  .learn-card .card-emoji { font-size: 2.8rem; display: block; margin-bottom: 6px; }
+  .learn-card .card-word { font-size: 1.3rem; font-weight: 900; color: var(--dark); }
+  .learn-card .card-hint { font-size: 0.75rem; color: #7A8B99; margin-top: 4px; }
+  .learn-card .card-mastery { margin-top: 6px; height: 5px; background: #E0E7EF; border-radius: 3px; overflow: hidden; }
+  .learn-card .card-mastery-fill { height: 100%; background: linear-gradient(90deg, var(--secondary), var(--success)); transition: width 0.4s; }
+
+  .learn-tabs { display: flex; gap: 8px; margin-bottom: 14px; background: white; padding: 6px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  .learn-tab { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 10px; font-family: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; color: #7A8B99; transition: all 0.2s; }
+  .learn-tab.active { background: linear-gradient(135deg, var(--primary), #FF8E8E); color: white; }
+  .learn-tab:hover:not(.active) { background: #F0F4F8; }
+
+  .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .progress-bar { flex: 1; height: 14px; background: #E0E7EF; border-radius: 10px; overflow: hidden; margin: 0 12px; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--secondary), var(--success)); border-radius: 10px; transition: width 0.4s ease; width: 0%; }
+  .score-badge { background: var(--accent); color: var(--dark); padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
+
+  .word-card { background: white; border-radius: var(--radius); padding: 22px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  .word-emoji { font-size: 6.5rem; margin-bottom: 8px; animation: pop 0.5s ease; }
+  @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+  .word-text { font-size: 2.8rem; font-weight: 900; color: var(--dark); margin-bottom: 6px; letter-spacing: 2px; }
+  .word-hint { color: #7A8B99; font-size: 0.95rem; }
+
+  .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .action-buttons .btn { margin-bottom: 0; padding: 14px; font-size: 1rem; }
+
+  .mic-button {
+    width: 100%;
+    background: linear-gradient(135deg, var(--primary), #FF8E8E);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 18px;
+    font-family: inherit;
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+    margin-bottom: 12px;
+  }
+
+  .mic-button:hover { transform: translateY(-2px); }
+  .mic-button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .mic-button.listening { background: linear-gradient(135deg, #FF4757, #FF6B6B); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 6px 20px rgba(255,71,87,0.4); } 50% { box-shadow: 0 6px 40px rgba(255,71,87,0.8); } }
+
+  .feedback {
+    background: white;
+    border-radius: 16px;
+    padding: 14px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+
+  .feedback.success { background: #D3F9D8; color: #2B8A3E; }
+  .feedback.warning { background: #FFF3BF; color: #B8860B; }
+  .feedback.error { background: #FFE3E3; color: #C92A2A; }
+  .feedback.info { background: #E3FAFC; color: #0B7285; }
+
+  .transcript { font-size: 0.85rem; color: #7A8B99; text-align: center; min-height: 18px; }
+
+  .results-title { text-align: center; font-size: 1.9rem; font-weight: 900; color: var(--dark); margin-bottom: 6px; }
+  .results-subtitle { text-align: center; color: #7A8B99; margin-bottom: 20px; }
+  .results-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  .result-card { background: white; border-radius: 16px; padding: 18px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  .result-card .value { font-size: 2rem; font-weight: 900; color: var(--primary); }
+  .result-card .label { font-size: 0.85rem; color: #7A8B99; margin-top: 4px; }
+  .tree-visual { background: white; border-radius: 16px; padding: 18px; text-align: center; margin-bottom: 16px; font-size: 2rem; line-height: 1.6; min-height: 90px; }
+
+  .teacher-table { width: 100%; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px; font-size: 0.85rem; }
+  .teacher-table th { background: var(--dark); color: white; padding: 10px 8px; text-align: right; font-weight: 700; }
+  .teacher-table td { padding: 10px 8px; border-bottom: 1px solid #F0F4F8; }
+  .teacher-table tr:last-child td { border-bottom: none; }
+  .mastery-bar { display: inline-block; height: 8px; border-radius: 4px; background: var(--success); vertical-align: middle; margin-left: 6px; }
+  .section-title { font-size: 1.2rem; font-weight: 900; margin: 18px 0 10px; color: var(--dark); }
+
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: var(--dark);
+    color: white;
+    padding: 12px 22px;
+    border-radius: 12px;
+    font-weight: 700;
+    z-index: 1000;
+    transition: transform 0.3s;
+    box-shadow: var(--shadow);
+    max-width: 90vw;
+    text-align: center;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .labeeb-mascot {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    font-size: 3rem;
+    z-index: 100;
+    animation: bounce 2s infinite;
+    pointer-events: none;
+    transition: transform 0.3s;
+  }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 500; padding: 20px; }
+  .modal-overlay.active { display: flex; }
+  .modal-content { background: white; border-radius: 24px; padding: 24px; max-width: 400px; width: 100%; text-align: center; animation: pop 0.3s ease; }
+  .modal-emoji { font-size: 5rem; margin-bottom: 10px; }
+  .modal-word { font-size: 2.2rem; font-weight: 900; margin-bottom: 8px; }
+  .modal-desc { color: #7A8B99; margin-bottom: 18px; font-size: 1rem; line-height: 1.6; }
+  .modal-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  @media (max-width: 480px) {
+    .welcome-title { font-size: 1.8rem; }
+    .word-text { font-size: 2.1rem; }
+    .word-emoji { font-size: 5rem; }
+    .labeeb-mascot { font-size: 2.2rem; bottom: 10px; left: 10px; }
+    .learn-grid { grid-template-columns: repeat(2, 1fr); }
+    .app-container { min-height: 620px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ============ الشاشة الرئيسية ============ -->
+  <div id="screen-welcome" class="screen active">
+    <h1 class="welcome-title">لبيب AI</h1>
+    <p class="welcome-subtitle">هيا نتعلم العربية باللعب مع لبيب! 🦊</p>
+    <div class="labeeb-hero">🦊</div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="welcome-points">0</div>
+        <div class="stat-label">نقاطك</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="welcome-mastered">0</div>
+        <div class="stat-label">كلمات أتقنتها</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="welcome-streak">0</div>
+        <div class="stat-label">أفضل سلسلة</div>
+      </div>
+    </div>
+
+    <div class="voice-selector">
+      <div class="voice-selector-title">
+        <span>🎙️</span> اختر من يقرأ لك الكلمات:
+      </div>
+      <div class="voice-options">
+        <button class="voice-option" id="voice-girl" onclick="App.selectVoice('girl')">
+          <span class="avatar">👧</span>
+          <div class="name">لمى</div>
+          <div class="desc">صوت بنت</div>
+        </button>
+        <button class="voice-option" id="voice-boy" onclick="App.selectVoice('boy')">
+          <span class="avatar">👦</span>
+          <div class="name">سالم</div>
+          <div class="desc">صوت ولد</div>
+        </button>
+      </div>
+      <button class="voice-test-btn" onclick="App.testVoice()">
+        🔊 جرّب الصوت
+      </button>
+    </div>
+
+    <button class="btn btn-purple" onclick="App.openLearn(); App.renderLearnCards()">
+      📚 تعلّم أولاً
+    </button>
+    <button class="btn btn-primary" onclick="App.startSession()">
+      🎮 ابدأ اللعب
+    </button>
+    <button class="btn btn-secondary" onclick="App.showScreen('screen-teacher'); App.renderTeacher()">
+      📊 لوحة المتابعة
+    </button>
+    <button class="btn btn-ghost" onclick="App.resetProgress()">
+      🔄 إعادة البدء من جديد
+    </button>
+  </div>
+
+  <!-- ============ شاشة التعلم ============ -->
+  <div id="screen-learn" class="screen">
+    <div class="learn-header">
+      <h2 class="learn-title">📚 تعلّم</h2>
+      <button class="btn btn-ghost" style="width:auto;padding:8px 16px;margin:0" onclick="App.showScreen('screen-welcome')">
+        🏠 رجوع
+      </button>
+    </div>
+
+    <div class="tips-box">
+      <h3>💡 نصائح لطيفة قبل اللعب</h3>
+      <div class="tip-item">
+        <span class="emoji">👂</span>
+        <span>استمع للكلمة أولاً بتركيز، ثم أعِدها بصوت واضح.</span>
+      </div>
+      <div class="tip-item">
+        <span class="emoji">🗣️</span>
+        <span>تحدث بهدوء ووضوح. لا تستعجل!</span>
+      </div>
+      <div class="tip-item">
+        <span class="emoji">🎤</span>
+        <span>اقترب من الميكروفون قليلاً وقل الكلمة كاملة.</span>
+      </div>
+      <div class="tip-item">
+        <span class="emoji">🔁</span>
+        <span>إذا أخطأت، لا بأس! أعد المحاولة مرة أخرى.</span>
+      </div>
+      <div class="tip-item">
+        <span class="emoji">⭐</span>
+        <span>كل نطق صحيح يمنحك نقاطاً ويزرع ورقة في شجرتك!</span>
+      </div>
+      <div class="tip-item">
+        <span class="emoji">🦊</span>
+        <span>لبيب صديقك، سيساعدك في كل خطوة!</span>
+      </div>
+    </div>
+
+    <div class="learn-tabs">
+      <button class="learn-tab active" data-tab="all" onclick="App.switchLearnTab('all')">🌟 كل الكلمات</button>
+      <button class="learn-tab" data-tab="new" onclick="App.switchLearnTab('new')">🆕 لم أتعلمها</button>
+      <button class="learn-tab" data-tab="hard" onclick="App.switchLearnTab('hard')">💪 تحتاج تركيزاً</button>
+    </div>
+
+    <p style="color:#7A8B99;font-size:0.9rem;text-align:center;margin-bottom:12px">
+      اضغط على أي بطاقة لتسمع الكلمة وتتعلمها
+    </p>
+
+    <div class="learn-grid" id="learn-grid"></div>
+
+    <button class="btn btn-primary" style="margin-top:14px" onclick="App.startSession()">
+      🎮 هيا نلعب الآن!
+    </button>
+  </div>
+
+  <!-- ============ شاشة اللعب ============ -->
+  <div id="screen-game" class="screen">
+    <div class="game-header">
+      <div class="score-badge">⭐ <span id="game-points">0</span></div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="score-badge">🎯 <span id="game-question">1</span>/<span id="game-total">10</span></div>
+    </div>
+
+    <div class="word-card">
+      <div class="word-emoji" id="word-emoji">🍎</div>
+      <div class="word-text" id="word-text">تفاحة</div>
+      <div class="word-hint" id="word-hint">استمع ثم انطق الكلمة</div>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn btn-secondary" onclick="App.playWord()">🔊 استمع</button>
+      <button class="btn btn-ghost" onclick="App.skipWord()">⏭️ تخطي</button>
+    </div>
+
+    <button class="mic-button" id="mic-button" onclick="App.toggleListening()">
+      🎤 اضغط وتحدث
+    </button>
+
+    <div class="feedback info" id="feedback">
+      اضغط على الميكروفون ثم انطق الكلمة
+    </div>
+
+    <div class="transcript" id="transcript"></div>
+  </div>
+
+  <!-- ============ شاشة النتائج ============ -->
+  <div id="screen-results" class="screen">
+    <h2 class="results-title">🎉 أحسنت!</h2>
+    <p class="results-subtitle" id="results-message">أكملت الجلسة بنجاح</p>
+
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="value" id="results-points">0</div>
+        <div class="label">نقاط الجلسة</div>
+      </div>
+      <div class="result-card">
+        <div class="value" id="results-correct">0</div>
+        <div class="label">نطق صحيح</div>
+      </div>
+      <div class="result-card">
+        <div class="value" id="results-attempts">0</div>
+        <div class="label">إجمالي المحاولات</div>
+      </div>
+      <div class="result-card">
+        <div class="value" id="results-accuracy">0%</div>
+        <div class="label">نسبة الدقة</div>
+      </div>
+    </div>
+
+    <div class="tree-visual" id="tree-visual">🌳 شجرة مفرداتك تنمو!</div>
+
+    <button class="btn btn-primary" onclick="App.startSession()">🎮 جلسة جديدة</button>
+    <button class="btn btn-ghost" onclick="App.showScreen('screen-welcome'); App.updateWelcomeStats()">
+      🏠 العودة للرئيسية
+    </button>
+  </div>
+
+  <!-- ============ شاشة المعلم ============ -->
+  <div id="screen-teacher" class="screen">
+    <h2 class="results-title">📊 لوحة المتابعة</h2>
+    <p class="results-subtitle">تقدم الطفل في تعلم المفردات</p>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="teacher-total">0</div>
+        <div class="stat-label">إجمالي الكلمات</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="teacher-mastered">0</div>
+        <div class="stat-label">متقنة</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="teacher-needs">0</div>
+        <div class="stat-label">تحتاج تركيزاً</div>
+      </div>
+    </div>
+
+    <h3 class="section-title">📚 تفاصيل الكلمات</h3>
+    <table class="teacher-table">
+      <thead>
+        <tr>
+          <th>الكلمة</th>
+          <th>المحاولات</th>
+          <th>الدقة</th>
+          <th>الإتقان</th>
+        </tr>
+      </thead>
+      <tbody id="teacher-tbody"></tbody>
+    </table>
+
+    <button class="btn btn-ghost" onclick="App.showScreen('screen-welcome')">
+      🏠 العودة للرئيسية
+    </button>
+  </div>
+
+</div>
+
+<div class="labeeb-mascot" id="mascot">🦊</div>
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="word-modal" onclick="App.closeModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-emoji" id="modal-emoji">🍎</div>
+    <div class="modal-word" id="modal-word">تفاحة</div>
+    <div class="modal-desc" id="modal-desc">فاكهة حمراء لذيذة</div>
+    <div class="modal-buttons">
+      <button class="btn btn-secondary" style="margin:0" onclick="App.playModalWord()">🔊 استمع</button>
+      <button class="btn btn-primary" style="margin:0" onclick="App.closeModal()">👍 فهمت</button>
+    </div>
+  </div>
+</div>
+
+<!-- ResponsiveVoice SDK مع المفتاح الخاص بك -->
+<script src="https://code.responsivevoice.org/responsivevoice.js?key=LU3IjVQp"></script>
+
+<script>
+/* ============================================================
+   لَبِيب AI — التطبيق الكامل
+   ============================================================ */
+
+const App = (() => {
+
+  const WORDS = [
+    { word: 'تفاحة',  emoji: '🍎', level: 1, desc: 'فاكهة حمراء لذيذة ومفيدة' },
+    { word: 'سيارة',  emoji: '🚗', level: 1, desc: 'مركبة تسير على أربع عجلات' },
+    { word: 'كتاب',   emoji: '📚', level: 1, desc: 'نقرأ فيه القصص والمعرفة' },
+    { word: 'قلم',    emoji: '✏️', level: 1, desc: 'نكتب به على الورق' },
+    { word: 'شمس',    emoji: '☀️', level: 1, desc: 'تشرق في النهار وتعطينا الضوء' },
+    { word: 'قمر',    emoji: '🌙', level: 1, desc: 'يظهر في الليل منيراً' },
+    { word: 'بيت',    emoji: '🏠', level: 1, desc: 'مكان نعيش فيه مع عائلتنا' },
+    { word: 'قطة',    emoji: '🐱', level: 1, desc: 'حيوان أليف صغير يموء' },
+    { word: 'كلب',    emoji: '🐶', level: 1, desc: 'صديق الإنسان الوفي' },
+    { word: 'سمكة',   emoji: '🐟', level: 1, desc: 'تعيش في الماء وتسبح' },
+    { word: 'طائر',   emoji: '🐦', level: 2, desc: 'يطير في السماء بجناحيه' },
+    { word: 'شجرة',   emoji: '🌳', level: 2, desc: 'نبات كبير يعطينا الظل' },
+    { word: 'زهرة',   emoji: '🌸', level: 2, desc: 'جميلة وملونة وتعطينا العطر' },
+    { word: 'ماء',    emoji: '💧', level: 1, desc: 'نشربه ونعيش به' },
+    { word: 'خبز',    emoji: '🍞', level: 2, desc: 'نأكله في الفطور والغداء' },
+    { word: 'حليب',   emoji: '🥛', level: 2, desc: 'شراب أبيض مفيد للعظام' },
+    { word: 'موز',    emoji: '🍌', level: 1, desc: 'فاكهة صفراء طويلة' },
+    { word: 'عنب',    emoji: '🍇', level: 2, desc: 'حبات صغيرة تجتمع في عنقود' },
+    { word: 'فراولة', emoji: '🍓', level: 3, desc: 'فاكهة حمراء صغيرة لذيذة' },
+    { word: 'برتقال', emoji: '🍊', level: 3, desc: 'فاكهة برتقالية مليئة بالفيتامين' },
+    { word: 'مدرسة',  emoji: '🏫', level: 2, desc: 'مكان نتعلم فيه مع أصدقائنا' },
+    { word: 'معلم',   emoji: '👨‍🏫', level: 3, desc: 'يعلمنا القراءة والكتابة' },
+    { word: 'طبيب',   emoji: '👨‍⚕️', level: 3, desc: 'يعالجنا عندما نمرض' },
+    { word: 'مفتاح',  emoji: '🔑', level: 2, desc: 'نفتح به الباب' },
+    { word: 'باب',    emoji: '🚪', level: 2, desc: 'ندخل منه إلى البيت' },
+    { word: 'كرسي',   emoji: '🪑', level: 2, desc: 'نجلس عليه للراحة' },
+    { word: 'طاولة',  emoji: '🪑', level: 3, desc: 'نضع عليها الطعام والكتب' },
+    { word: 'نافذة',  emoji: '🪟', level: 3, desc: 'ندخل منها الضوء والهواء' },
+    { word: 'ساعة',   emoji: '⌚', level: 2, desc: 'تخبرنا بالوقت' },
+    { word: 'هاتف',   emoji: '📱', level: 2, desc: 'نتصل به بأحبابنا' }
+  ];
+
+  let state = {
+    progress: {},
+    points: 0,
+    bestStreak: 0,
+    currentStreak: 0,
+    voiceGender: 'girl',
+    session: {
+      queue: [], index: 0, results: [],
+      sessionPoints: 0, sessionCorrect: 0, sessionAttempts: 0
+    },
+    isListening: false,
+    recognition: null,
+    currentWord: null,
+    learnTab: 'all',
+    modalWord: null,
+    rvReady: false
+  };
+
+  function loadProgress() {
+    try {
+      const saved = localStorage.getItem('labeeb_progress_v4');
+      if (saved) {
+        const data = JSON.parse(saved);
+        state.progress = data.progress || {};
+        state.points = data.points || 0;
+        state.bestStreak = data.bestStreak || 0;
+        state.voiceGender = data.voiceGender || 'girl';
+      }
+    } catch (e) { console.warn('فشل تحميل التقدم:', e); }
+
+    WORDS.forEach(w => {
+      if (!state.progress[w.word]) {
+        state.progress[w.word] = {
+          word: w.word, emoji: w.emoji, level: w.level, desc: w.desc,
+          attempts: 0, correct: 0, consecutiveCorrect: 0,
+          pronunciationScore: 0, easeFactor: 2.5, intervalDays: 0,
+          lastSeen: null, errorCount: 0
+        };
+      }
+      state.progress[w.word].desc = w.desc;
+    });
+  }
+
+  function saveProgress() {
+    try {
+      localStorage.setItem('labeeb_progress_v4', JSON.stringify({
+        progress: state.progress,
+        points: state.points,
+        bestStreak: state.bestStreak,
+        voiceGender: state.voiceGender
+      }));
+    } catch (e) { console.warn('فشل حفظ التقدم:', e); }
+  }
+
+  /* ============================================================
+     ResponsiveVoice — الصوت الواقعي
+     ============================================================ */
+  function isRVReady() {
+    return typeof responsiveVoice !== 'undefined' && responsiveVoice.voiceSupport();
+  }
+
+  /**
+   * نطق النص باستخدام ResponsiveVoice
+   * - girl: Arabic Female
+   * - boy: Arabic Male
+   */
+  function speakWithRV(text, gender = 'girl') {
+    if (typeof responsiveVoice === 'undefined') {
+      toast('⚠️ جاري تحميل الصوت... حاول بعد لحظة');
+      return;
+    }
+    if (!responsiveVoice.voiceSupport()) {
+      toast('⚠️ المتصفح لا يدعم الصوت');
+      return;
+    }
+
+    // إيقاف أي نطق سابق
+    try { responsiveVoice.cancel(); } catch (e) {}
+
+    // اختيار الصوت
+    const voiceName = gender === 'girl' ? 'Arabic Female' : 'Arabic Male';
+
+    const params = {
+      pitch: gender === 'girl' ? 1.2 : 0.85,
+      rate: 0.85,
+      volume: 1,
+      onstart: () => { state.rvReady = true; },
+      onerror: (e) => {
+        console.warn('RV error:', e);
+        // محاولة بديلة بدون params
+        try { responsiveVoice.speak(text, voiceName); }
+        catch (e2) { toast('⚠️ تعذر تشغيل الصوت'); }
+      }
+    };
+
+    try {
+      responsiveVoice.speak(text, voiceName, params);
+    } catch (e) {
+      console.warn('فشل النطق:', e);
+      try { responsiveVoice.speak(text, voiceName); }
+      catch (e2) { toast('⚠️ تعذر تشغيل الصوت'); }
+    }
+  }
+
+  /* ============================================================
+     اختيار الصوت
+     ============================================================ */
+  function selectVoice(gender) {
+    state.voiceGender = gender;
+    updateVoiceUI();
+    saveProgress();
+    playVoiceSample();
+    toast(gender === 'girl' ? '👧 اخترت صوت لمى' : '👦 اخترت صوت سالم');
+  }
+
+  function updateVoiceUI() {
+    document.getElementById('voice-girl').classList.toggle('selected', state.voiceGender === 'girl');
+    document.getElementById('voice-boy').classList.toggle('selected', state.voiceGender === 'boy');
+  }
+
+  function testVoice() { playVoiceSample(); }
+
+  function playVoiceSample() {
+    const sample = state.voiceGender === 'girl'
+      ? 'مرحباً! أنا لمى، هيا نتعلم معاً'
+      : 'مرحباً! أنا سالم، هيا نتعلم معاً';
+    speakWithRV(sample, state.voiceGender);
+  }
+
+  /* ============================================================
+     صفحة التعلّم
+     ============================================================ */
+  function openLearn() {
+    showScreen('screen-learn');
+    updateLearnTabs();
+  }
+
+  function switchLearnTab(tab) {
+    state.learnTab = tab;
+    updateLearnTabs();
+    renderLearnCards();
+  }
+
+  function updateLearnTabs() {
+    document.querySelectorAll('.learn-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === state.learnTab);
+    });
+  }
+
+  function renderLearnCards() {
+    const grid = document.getElementById('learn-grid');
+    let words = WORDS.slice();
+
+    if (state.learnTab === 'new') {
+      words = words.filter(w => state.progress[w.word].attempts === 0);
+    } else if (state.learnTab === 'hard') {
+      words = words.filter(w => {
+        const p = state.progress[w.word];
+        return p.attempts > 0 && p.pronunciationScore < 60;
+      });
+    }
+
+    if (words.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#7A8B99;padding:30px">
+        ${state.learnTab === 'new' ? '🎉 تعلمت كل الكلمات!' :
+          state.learnTab === 'hard' ? '🌟 ممتاز! لا كلمات صعبة حالياً' : 'لا توجد كلمات'}
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = words.map(w => {
+      const p = state.progress[w.word];
+      const mastery = p.attempts > 0 ? p.pronunciationScore : 0;
+      return `
+        <div class="learn-card" onclick="App.showWordModal('${w.word}')">
+          <span class="card-emoji">${w.emoji}</span>
+          <div class="card-word">${w.word}</div>
+          <div class="card-hint">
+            ${p.attempts === 0 ? '✨ جديدة' : `دقة ${mastery}%`}
+          </div>
+          <div class="card-mastery">
+            <div class="card-mastery-fill" style="width:${mastery}%"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function showWordModal(word) {
+    const w = WORDS.find(x => x.word === word);
+    if (!w) return;
+    state.modalWord = w;
+    document.getElementById('modal-emoji').textContent = w.emoji;
+    document.getElementById('modal-word').textContent = w.word;
+    document.getElementById('modal-desc').textContent = w.desc || '';
+    document.getElementById('word-modal').classList.add('active');
+    setTimeout(() => playModalWord(), 300);
+  }
+
+  function playModalWord() {
+    if (!state.modalWord) return;
+    speakWithRV(state.modalWord.word, state.voiceGender);
+  }
+
+  function closeModal(event) {
+    if (event && event.target.id !== 'word-modal') return;
+    document.getElementById('word-modal').classList.remove('active');
+    state.modalWord = null;
+  }
+
+  /* ============================================================
+     محرك التعلم التكيفي
+     ============================================================ */
+  function calculateWeight(word) {
+    const p = state.progress[word.word];
+    if (!p) return 1;
+    const baseWeight = p.level;
+    let urgency = 1.0;
+    if (p.lastSeen) {
+      const daysSince = (Date.now() - p.lastSeen) / (1000 * 60 * 60 * 24);
+      if (daysSince > p.intervalDays) urgency = 2.5;
+      else if (daysSince > p.intervalDays * 0.7) urgency = 1.5;
+    } else urgency = 1.3;
+
+    let pronFactor = 1.0;
+    if (p.attempts > 0) {
+      const score = p.pronunciationScore;
+      if (score < 50) pronFactor = 2.0;
+      else if (score < 75) pronFactor = 1.5;
+      else if (score >= 90) pronFactor = 0.5;
+      else pronFactor = 0.8;
+    } else pronFactor = 1.2;
+
+    return baseWeight * urgency * pronFactor;
+  }
+
+  function buildAdaptiveQueue(count = 10) {
+    const available = WORDS.map(w => ({ word: w, weight: calculateWeight(w) }));
+    const queue = [];
+    const usedWords = new Set();
+    while (queue.length < count && available.length > 0) {
+      const totalWeight = available.reduce((s, a) => s + a.weight, 0);
+      let random = Math.random() * totalWeight;
+      let picked = 0;
+      for (let i = 0; i < available.length; i++) {
+        random -= available[i].weight;
+        if (random <= 0) { picked = i; break; }
+      }
+      const item = available.splice(picked, 1)[0];
+      if (!usedWords.has(item.word.word)) {
+        queue.push(item.word);
+        usedWords.add(item.word.word);
+      }
+    }
+    return queue;
+  }
+
+  /* ============================================================
+     تقييم النطق
+     ============================================================ */
+  function normalizeArabic(text) {
+    if (!text) return '';
+    return text
+      .replace(/[\u064B-\u0652]/g, '')
+      .replace(/[إأآا]/g, 'ا')
+      .replace(/ى/g, 'ي')
+      .replace(/ؤ/g, 'و')
+      .replace(/ئ/g, 'ي')
+      .replace(/ة/g, 'ه')
+      .replace(/[^\u0600-\u06FF\s]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function levenshtein(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) matrix[i][j] = matrix[i - 1][j - 1];
+        else matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  function evaluatePronunciation(target, spoken) {
+    const t = normalizeArabic(target);
+    const s = normalizeArabic(spoken);
+    if (!s) return 0;
+    if (s === t) return 100;
+    if (s.includes(t)) return 95;
+    const spokenWords = s.split(' ').filter(Boolean);
+    let bestScore = 0;
+    const maxLen = Math.max(t.length, s.length);
+    const dist = levenshtein(t, s);
+    bestScore = Math.max(bestScore, Math.round((1 - dist / maxLen) * 100));
+    spokenWords.forEach(w => {
+      const maxL = Math.max(t.length, w.length);
+      const d = levenshtein(t, w);
+      const score = Math.round((1 - d / maxL) * 100);
+      bestScore = Math.max(bestScore, score);
+    });
+    return Math.max(0, Math.min(100, bestScore));
+  }
+
+  function updateProgress(word, pronunciationScore) {
+    const p = state.progress[word];
+    p.attempts += 1;
+    p.lastSeen = Date.now();
+    const alpha = 0.3;
+    p.pronunciationScore = p.attempts === 1
+      ? pronunciationScore
+      : Math.round(p.pronunciationScore * (1 - alpha) + pronunciationScore * alpha);
+    const isCorrect = pronunciationScore >= 75;
+    if (isCorrect) {
+      p.correct += 1;
+      p.consecutiveCorrect += 1;
+      let quality = 5;
+      if (pronunciationScore < 85) quality = 4;
+      p.easeFactor = Math.max(1.3,
+        p.easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
+      );
+      if (p.consecutiveCorrect === 1) p.intervalDays = 1;
+      else if (p.consecutiveCorrect === 2) p.intervalDays = 3;
+      else p.intervalDays = Math.round(p.intervalDays * p.easeFactor);
+      if (p.pronunciationScore >= 90 && p.consecutiveCorrect >= 3) {
+        p.intervalDays = Math.max(p.intervalDays, 7);
+      }
+    } else {
+      p.consecutiveCorrect = 0;
+      p.errorCount += 1;
+      p.intervalDays = 0;
+      p.easeFactor = Math.max(1.3, p.easeFactor - 0.2);
+    }
+    saveProgress();
+    return isCorrect;
+  }
+
+  /* ============================================================
+     التعرف على الكلام
+     ============================================================ */
+  function initSpeechRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      toast('⚠️ متصفحك لا يدعم التعرف على الكلام. استخدم Chrome أو Edge');
+      return null;
+    }
+    const rec = new SR();
+    rec.lang = 'ar-SA';
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.maxAlternatives = 3;
+
+    rec.onresult = (event) => {
+      const results = [];
+      for (let i = 0; i < event.results.length; i++) {
+        for (let j = 0; j < event.results[i].length; j++) {
+          results.push(event.results[i][j].transcript);
+        }
+      }
+      handleSpeechResult(results);
+    };
+
+    rec.onerror = (event) => {
+      console.warn('خطأ في التعرف:', event.error);
+      if (event.error === 'no-speech') setFeedback('لم أسمع صوتاً. حاول مرة أخرى 🎤', 'warning');
+      else if (event.error === 'not-allowed') setFeedback('يجب السماح بالوصول للميكروفون', 'error');
+      else setFeedback('حدث خطأ، حاول مرة أخرى', 'error');
+      stopListening();
+    };
+
+    rec.onend = () => stopListening();
+    return rec;
+  }
+
+  function toggleListening() {
+    if (state.isListening) { stopListening(); return; }
+    if (!state.recognition) {
+      state.recognition = initSpeechRecognition();
+      if (!state.recognition) return;
+    }
+    startListening();
+  }
+
+  function startListening() {
+    try {
+      state.recognition.start();
+      state.isListening = true;
+      const btn = document.getElementById('mic-button');
+      btn.classList.add('listening');
+      btn.innerHTML = '🎙️ أستمع إليك...';
+      setFeedback('تحدث الآن بوضوح 🎤', 'info');
+      document.getElementById('transcript').textContent = '';
+    } catch (e) { console.warn('فشل بدء الاستماع:', e); }
+  }
+
+  function stopListening() {
+    state.isListening = false;
+    const btn = document.getElementById('mic-button');
+    if (btn) {
+      btn.classList.remove('listening');
+      btn.innerHTML = '🎤 اضغط وتحدث';
+    }
+  }
+
+  function handleSpeechResult(transcripts) {
+    const word = state.currentWord;
+    if (!word) return;
+
+    let bestScore = 0;
+    let bestTranscript = '';
+    transcripts.forEach(t => {
+      const score = evaluatePronunciation(word.word, t);
+      if (score > bestScore) { bestScore = score; bestTranscript = t; }
+    });
+
+    document.getElementById('transcript').textContent = `سمعت: "${bestTranscript}"`;
+
+    const isCorrect = bestScore >= 75;
+    const isClose = bestScore >= 50 && bestScore < 75;
+
+    updateProgress(word.word, bestScore);
+
+    state.session.results.push({
+      word: word.word, emoji: word.emoji,
+      transcript: bestTranscript, score: bestScore, correct: isCorrect
+    });
+    state.session.sessionAttempts += 1;
+
+    let points = 0;
+    if (bestScore >= 90) { points = 10; state.currentStreak += 1; }
+    else if (isCorrect) { points = 7; state.currentStreak += 1; }
+    else if (isClose) { points = 3; state.currentStreak = 0; }
+    else { points = 0; state.currentStreak = 0; }
+
+    if (state.currentStreak > state.bestStreak) state.bestStreak = state.currentStreak;
+
+    state.points += points;
+    state.session.sessionPoints += points;
+    if (isCorrect) state.session.sessionCorrect += 1;
+
+    if (bestScore >= 90) {
+      setFeedback(`🌟 ممتاز! نطق مثالي لـ "${word.word}"! +${points}`, 'success');
+      animateMascot('🎉');
+    } else if (isCorrect) {
+      setFeedback(`✅ أحسنت! "${word.word}" نطق صحيح! +${points}`, 'success');
+      animateMascot('🦊');
+    } else if (isClose) {
+      setFeedback(`🔄 قريب جداً! حاول مرة أخرى +${points}`, 'warning');
+      animateMascot('💪');
+    } else {
+      setFeedback(`❌ حاول مرة أخرى، استمع للكلمة أولاً`, 'error');
+      animateMascot('🤔');
+    }
+
+    updateGameUI();
+    saveProgress();
+
+    const delay = isCorrect ? 1800 : 2500;
+    setTimeout(() => nextQuestion(), delay);
+  }
+
+  /* ============================================================
+     إدارة الجلسة
+     ============================================================ */
+  function startSession() {
+    state.session = {
+      queue: buildAdaptiveQueue(10), index: 0, results: [],
+      sessionPoints: 0, sessionCorrect: 0, sessionAttempts: 0
+    };
+    state.currentStreak = 0;
+    showScreen('screen-game');
+    document.getElementById('game-total').textContent = state.session.queue.length;
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    if (state.session.index >= state.session.queue.length) {
+      showResults();
+      return;
+    }
+    const word = state.session.queue[state.session.index];
+    state.currentWord = word;
+
+    document.getElementById('word-emoji').textContent = word.emoji;
+    document.getElementById('word-text').textContent = word.word;
+    document.getElementById('word-hint').textContent = 'استمع ثم انطق الكلمة';
+    document.getElementById('game-question').textContent = state.session.index + 1;
+    setFeedback('اضغط على الميكروفون ثم انطق الكلمة', 'info');
+    document.getElementById('transcript').textContent = '';
+
+    setTimeout(() => playWord(), 500);
+    updateGameUI();
+  }
+
+  function nextQuestion() {
+    state.session.index += 1;
+    loadQuestion();
+  }
+
+  function skipWord() {
+    if (!state.currentWord) return;
+    const p = state.progress[state.currentWord.word];
+    p.attempts += 1;
+    p.lastSeen = Date.now();
+    p.intervalDays = 0;
+    saveProgress();
+    setFeedback('تم تخطي الكلمة ⏭️', 'warning');
+    setTimeout(() => nextQuestion(), 800);
+  }
+
+  function playWord() {
+    if (!state.currentWord) return;
+    speakWithRV(state.currentWord.word, state.voiceGender);
+  }
+
+  /* ============================================================
+     واجهة المستخدم
+     ============================================================ */
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateGameUI() {
+    document.getElementById('game-points').textContent = state.points;
+    const total = state.session.queue.length;
+    const progress = (state.session.index / total) * 100;
+    document.getElementById('progress-fill').style.width = progress + '%';
+  }
+
+  function setFeedback(message, type = 'info') {
+    const el = document.getElementById('feedback');
+    el.className = 'feedback ' + type;
+    el.textContent = message;
+  }
+
+  function animateMascot(emoji) {
+    const m = document.getElementById('mascot');
+    m.textContent = emoji;
+    m.style.transform = 'scale(1.5)';
+    setTimeout(() => { m.style.transform = 'scale(1)'; }, 300);
+    setTimeout(() => { m.textContent = '🦊'; }, 1500);
+  }
+
+  function toast(message) {
+    const t = document.getElementById('toast');
+    t.textContent = message;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function updateWelcomeStats() {
+    const mastered = Object.values(state.progress)
+      .filter(p => p.consecutiveCorrect >= 3 && p.pronunciationScore >= 85).length;
+    document.getElementById('welcome-points').textContent = state.points;
+    document.getElementById('welcome-mastered').textContent = mastered;
+    document.getElementById('welcome-streak').textContent = state.bestStreak;
+  }
+
+  function showResults() {
+    const s = state.session;
+    const accuracy = s.sessionAttempts > 0
+      ? Math.round((s.sessionCorrect / s.sessionAttempts) * 100) : 0;
+
+    document.getElementById('results-points').textContent = s.sessionPoints;
+    document.getElementById('results-correct').textContent = s.sessionCorrect;
+    document.getElementById('results-attempts').textContent = s.sessionAttempts;
+    document.getElementById('results-accuracy').textContent = accuracy + '%';
+
+    let msg = '';
+    if (accuracy >= 90) msg = '🌟 أداء رائع! أنت بطل!';
+    else if (accuracy >= 70) msg = '👏 أحسنت! استمر في التقدم';
+    else if (accuracy >= 50) msg = '💪 جيد! يمكنك التحسن أكثر';
+    else msg = '🌱 بداية جيدة! كرر المحاولة';
+    document.getElementById('results-message').textContent = msg;
+
+    const mastered = Object.values(state.progress)
+      .filter(p => p.consecutiveCorrect >= 3 && p.pronunciationScore >= 85).length;
+    const treeSize = Math.min(mastered, 30);
+    let tree = '🌱';
+    if (treeSize >= 25) tree = '🌳🌳🌳';
+    else if (treeSize >= 15) tree = '🌳🌳';
+    else if (treeSize >= 8) tree = '🌳';
+    else if (treeSize >= 4) tree = '🌿';
+    document.getElementById('tree-visual').innerHTML =
+      `${tree} <br><small style="color:#7A8B99">${mastered} كلمة متقنة</small>`;
+
+    showScreen('screen-results');
+    updateWelcomeStats();
+  }
+
+  function renderTeacher() {
+    const progressArr = Object.values(state.progress)
+      .filter(p => p.attempts > 0)
+      .sort((a, b) => b.attempts - a.attempts);
+
+    const total = progressArr.length;
+    const mastered = progressArr.filter(p =>
+      p.consecutiveCorrect >= 3 && p.pronunciationScore >= 85).length;
+    const needs = progressArr.filter(p =>
+      p.pronunciationScore < 60 && p.attempts > 0).length;
+
+    document.getElementById('teacher-total').textContent = total;
+    document.getElementById('teacher-mastered').textContent = mastered;
+    document.getElementById('teacher-needs').textContent = needs;
+
+    const tbody = document.getElementById('teacher-tbody');
+    if (progressArr.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#7A8B99;padding:20px">
+        لا توجد بيانات بعد. ابدأ جلسة لعب أولاً!
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = progressArr.map(p => {
+      const accuracy = p.attempts > 0 ? Math.round((p.correct / p.attempts) * 100) : 0;
+      const masteryWidth = Math.round((p.pronunciationScore / 100) * 80);
+      const masteryColor = p.pronunciationScore >= 85 ? '#51CF66'
+        : p.pronunciationScore >= 60 ? '#FFA94D' : '#FF6B6B';
+      return `<tr>
+        <td>${p.emoji} ${p.word}</td>
+        <td>${p.attempts}</td>
+        <td>${accuracy}%</td>
+        <td>
+          <span class="mastery-bar" style="width:${masteryWidth}px;background:${masteryColor}"></span>
+          ${p.pronunciationScore}%
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function resetProgress() {
+    if (confirm('هل أنت متأكد من إعادة البدء من جديد؟ سيتم حذف كل التقدم.')) {
+      localStorage.removeItem('labeeb_progress_v4');
+      state.progress = {};
+      state.points = 0;
+      state.bestStreak = 0;
+      loadProgress();
+      updateWelcomeStats();
+      toast('✅ تم إعادة البدء بنجاح');
+    }
+  }
+
+  function init() {
+    loadProgress();
+    updateWelcomeStats();
+    updateVoiceUI();
+
+    // التحقق من جاهزية ResponsiveVoice
+    let checkCount = 0;
+    const checkRV = setInterval(() => {
+      checkCount++;
+      if (isRVReady()) {
+        state.rvReady = true;
+        clearInterval(checkRV);
+      } else if (checkCount > 20) {
+        clearInterval(checkRV);
+        toast('⚠️ تحقق من اتصال الإنترنت والمفتاح LU3IjVQp');
+      }
+    }, 500);
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      setTimeout(() => toast('⚠️ للحصول على أفضل تجربة، استخدم Chrome أو Edge'), 3000);
+    }
+  }
+
+  return {
+    init, startSession, playWord, skipWord, toggleListening,
+    showScreen, renderTeacher, updateWelcomeStats, resetProgress,
+    selectVoice, testVoice, openLearn, renderLearnCards,
+    switchLearnTab, showWordModal, playModalWord, closeModal
+  };
+
+})();
+
+document.addEventListener('DOMContentLoaded', App.init);
+</script>
+
+</body>
+</html>
