@@ -50,6 +50,67 @@
 
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+  /* ============ شاشة الدخول (Splash) ============ */
+  #screen-splash {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 660px;
+    background: white;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  #screen-splash.active { display: flex; }
+
+  .splash-logo {
+    width: 260px;
+    height: 260px;
+    object-fit: contain;
+    animation: splashPop 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    margin-bottom: 20px;
+    border-radius: 50%;
+    box-shadow: 0 8px 30px rgba(155, 89, 182, 0.3);
+  }
+
+  @keyframes splashPop {
+    0% { transform: scale(0.3); opacity: 0; }
+    60% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .splash-title {
+    font-size: 2.8rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+    animation: fadeInUp 1s 0.5s both;
+  }
+
+  .splash-subtitle {
+    font-size: 1.2rem;
+    color: #7A8B99;
+    animation: fadeInUp 1s 0.8s both;
+  }
+
+  .splash-loader {
+    margin-top: 30px;
+    width: 50px;
+    height: 50px;
+    border: 5px solid #E0E7EF;
+    border-top: 5px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    animation: fadeInUp 1s 1s both, spin 1s linear infinite;
+  }
+
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ============ باقي الأنماط ============ */
   .welcome-title {
     text-align: center;
     font-size: 2.4rem;
@@ -62,7 +123,18 @@
   }
 
   .welcome-subtitle { text-align: center; color: #7A8B99; font-size: 1.05rem; margin-bottom: 18px; }
-  .labeeb-hero { font-size: 5rem; text-align: center; margin: 8px 0 16px; animation: bounce 2s infinite; }
+
+  /* الشعار في الشاشة الرئيسية */
+  .labeeb-hero-logo {
+    display: block;
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+    margin: 8px auto 16px;
+    animation: bounce 3s infinite;
+    border-radius: 50%;
+    box-shadow: 0 8px 24px rgba(155, 89, 182, 0.2);
+  }
 
   @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
@@ -267,15 +339,22 @@
 
   .toast.show { transform: translateX(-50%) translateY(0); }
 
+  /* الأيقونة العائمة - تم استبدال الثعلب بالشعار */
   .labeeb-mascot {
     position: fixed;
     bottom: 20px;
     left: 20px;
-    font-size: 3rem;
+    width: 80px;
+    height: 80px;
     z-index: 100;
     animation: bounce 2s infinite;
     pointer-events: none;
     transition: transform 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
+    background: white;
+    padding: 5px;
+    object-fit: contain;
   }
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 500; padding: 20px; }
@@ -316,9 +395,11 @@
     .welcome-title { font-size: 1.8rem; }
     .word-text { font-size: 2.1rem; }
     .word-emoji { font-size: 5rem; }
-    .labeeb-mascot { font-size: 2.2rem; bottom: 10px; left: 10px; }
+    .labeeb-mascot { width: 60px; height: 60px; bottom: 10px; left: 10px; }
     .learn-grid { grid-template-columns: repeat(2, 1fr); }
     .app-container { min-height: 620px; }
+    .splash-logo { width: 200px; height: 200px; }
+    .splash-title { font-size: 2rem; }
   }
 </style>
 </head>
@@ -326,11 +407,26 @@
 
 <div class="app-container">
 
+  <!-- ============ شاشة الدخول (Splash) ============ -->
+  <div id="screen-splash" class="screen active">
+    <img src="https://i.postimg.cc/Mc7mKDdN/Whats-App-Image-2026-09-26-at-9-51-19-PM-removebg-preview.png" 
+         alt="شعار لبيب AI" 
+         class="splash-logo"
+         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22><circle cx=%22100%22 cy=%22100%22 r=%2290%22 fill=%22%239B59B6%22/><text x=%22100%22 y=%22110%22 font-size=%2280%22 text-anchor=%22middle%22 fill=%22white%22>🦊</text></svg>'">
+    <h1 class="splash-title">لبيب AI</h1>
+    <p class="splash-subtitle">صديقك في تعلم العربية</p>
+    <div class="splash-loader"></div>
+  </div>
+
   <!-- ============ الشاشة الرئيسية ============ -->
-  <div id="screen-welcome" class="screen active">
+  <div id="screen-welcome" class="screen">
     <h1 class="welcome-title">لبيب AI</h1>
-    <p class="welcome-subtitle">هيا نتعلم العربية باللعب مع لبيب! 🦊</p>
-    <div class="labeeb-hero">🦊</div>
+    <p class="welcome-subtitle">هيا نتعلم العربية باللعب! ✨</p>
+    
+    <img src="https://i.postimg.cc/Mc7mKDdN/Whats-App-Image-2026-09-26-at-9-51-19-PM-removebg-preview.png" 
+         alt="شعار لبيب AI" 
+         class="labeeb-hero-logo"
+         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22><circle cx=%22100%22 cy=%22100%22 r=%2290%22 fill=%22%239B59B6%22/><text x=%22100%22 y=%22110%22 font-size=%2280%22 text-anchor=%22middle%22 fill=%22white%22>🦊</text></svg>'">
 
     <div class="stats-row">
       <div class="stat-card">
@@ -418,7 +514,7 @@
         <span>هدفنا النطق المثالي 100%! لبيب سيساعدك خطوة بخطوة.</span>
       </div>
       <div class="tip-item">
-        <span class="emoji">🦊</span>
+        <span class="emoji">✨</span>
         <span>لبيب صديقك، سيساعدك في كل خطوة!</span>
       </div>
     </div>
@@ -552,7 +648,12 @@
 
 </div>
 
-<div class="labeeb-mascot" id="mascot">🦊</div>
+<img src="https://i.postimg.cc/Mc7mKDdN/Whats-App-Image-2026-09-26-at-9-51-19-PM-removebg-preview.png" 
+     alt="شعار لبيب" 
+     class="labeeb-mascot" 
+     id="mascot"
+     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22><circle cx=%22100%22 cy=%22100%22 r=%2290%22 fill=%22%239B59B6%22/><text x=%22100%22 y=%22110%22 font-size=%2280%22 text-anchor=%22middle%22 fill=%22white%22>🦊</text></svg>'">
+
 <div class="toast" id="toast"></div>
 
 <div class="modal-overlay" id="word-modal" onclick="App.closeModal(event)">
@@ -926,9 +1027,6 @@ const App = (() => {
     return matrix[b.length][a.length];
   }
 
-  /**
-   * 🎯 تقييم النطق بدقة عالية
-   */
   function evaluatePronunciation(target, spoken) {
     const t = normalizeArabic(target);
     const s = normalizeArabic(spoken);
@@ -1249,13 +1347,12 @@ const App = (() => {
       setTimeout(() => nextQuestion(), 2200);
     } else if (isCorrect) {
       setFeedback(`✅ أحسنت! نطق صحيح (${score}%). +${points}`, 'success');
-      animateMascot('🦊');
+      animateMascot('✨');
       if (state.attemptsOnCurrentWord < 2) {
         setTimeout(() => {
           setFeedback(`🎯 قريب جداً من المثالي! اضغط الميكروفون وأعد المحاولة للوصول إلى 100%`, 'info');
           speakWithRV('حاول مرة أخرى لتصل إلى الكمال', state.voiceGender);
           state.attemptsOnCurrentWord = 2;
-          // تفعيل زر الميكروفون من جديد
           document.getElementById('mic-button').disabled = false;
         }, 1800);
       } else {
@@ -1276,9 +1373,6 @@ const App = (() => {
     saveProgress();
   }
 
-  /**
-   * 🎓 تعليم النطق الصحيح خطوة بخطوة
-   */
   function teachCorrectPronunciation(word, result) {
     state.isTeachingMode = true;
 
@@ -1416,10 +1510,8 @@ const App = (() => {
 
   function animateMascot(emoji) {
     const m = document.getElementById('mascot');
-    m.textContent = emoji;
     m.style.transform = 'scale(1.5)';
     setTimeout(() => { m.style.transform = 'scale(1)'; }, 300);
-    setTimeout(() => { m.textContent = '🦊'; }, 1500);
   }
 
   function toast(message) {
@@ -1525,6 +1617,10 @@ const App = (() => {
     loadProgress();
     updateWelcomeStats();
     updateVoiceUI();
+
+    setTimeout(() => {
+      showScreen('screen-welcome');
+    }, 3500);
 
     let checkCount = 0;
     const checkRV = setInterval(() => {
